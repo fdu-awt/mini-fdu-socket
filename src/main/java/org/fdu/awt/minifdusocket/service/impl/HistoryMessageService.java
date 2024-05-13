@@ -24,15 +24,8 @@ public class HistoryMessageService  implements IHistoryMessageService {
     public HistoryMessageService(HistoryMessageDAO historyMessageDAO) {this.historyMessageDAO = historyMessageDAO;}
 
     @Override
-    public boolean save(MessageSaveReq messageSaveReq){
-        try{
-            historyMessageDAO.save(HistoryMessage.fromMessageSaveReq(messageSaveReq));
-            return true;
-        } catch (Exception e){
-            //传入信息有误，外键约束不满足，即loacl_id和remote_id不是数据库中user表有的
-            e.printStackTrace();
-            return false;
-        }
+    public void save(MessageSaveReq messageSaveReq){
+        historyMessageDAO.save(HistoryMessage.fromMessageSaveReq(messageSaveReq));
     }
 
     @Override

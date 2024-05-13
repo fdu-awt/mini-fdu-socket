@@ -6,6 +6,7 @@ import org.fdu.awt.minifdusocket.bo.historyMessage.resp.MessageShowResp;
 import org.fdu.awt.minifdusocket.result.Result;
 import org.fdu.awt.minifdusocket.result.ResultFactory;
 import org.fdu.awt.minifdusocket.service.impl.HistoryMessageService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,11 +25,15 @@ public class HistoryMessageController {
 
     @PostMapping("save-history-message")
     public Result saveHistoryMessage(@Validated @RequestBody MessageSaveReq messageSaveReq) {
-        if(historyMessageService.save(messageSaveReq)) {
+        try{
+            historyMessageService.save(messageSaveReq);
             return ResultFactory.buildSuccessResult();
         }
-        else{
-            return ResultFactory.buildFailResult("传入的id在数据库中不存在");
+        catch (DataIntegrityViolationException e){
+            return ResultFactory.buildFailResult("传入的id有误");
+        }
+        catch (RuntimeException e) {
+            return ResultFactory.buildInternalServerErrorResult();
         }
 
     }
