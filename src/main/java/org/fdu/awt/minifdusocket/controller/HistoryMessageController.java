@@ -6,6 +6,8 @@ import org.fdu.awt.minifdusocket.bo.historyMessage.resp.MessageShowResp;
 import org.fdu.awt.minifdusocket.result.Result;
 import org.fdu.awt.minifdusocket.result.ResultFactory;
 import org.fdu.awt.minifdusocket.service.impl.HistoryMessageService;
+import org.fdu.awt.minifdusocket.websocket.WebSocket;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -17,16 +19,23 @@ import java.util.List;
 @RestController
 @RequestMapping("/message-service")
 public class HistoryMessageController {
+
+    @Autowired
+    private WebSocket webSocket;
+
     private final HistoryMessageService historyMessageService;
 
-    public HistoryMessageController(HistoryMessageService historyMessageService) {
+    public HistoryMessageController(HistoryMessageService historyMessageService, WebSocket webSocket) {
         this.historyMessageService = historyMessageService;
+
     }
 
     @PostMapping("save-history-message")
     public Result saveHistoryMessage(@Validated @RequestBody MessageSaveReq messageSaveReq) {
         try{
             historyMessageService.save(messageSaveReq);
+            webSocket.sendOneMessage(messageSaveReq.getRemoteId(),messageSaveReq.getContent());
+
             return ResultFactory.buildSuccessResult();
         }
         catch (DataIntegrityViolationException e){
