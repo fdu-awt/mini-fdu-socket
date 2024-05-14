@@ -33,7 +33,7 @@ public class HistoryMessage {
     private Timestamp timeStamp;
 
 
-    public static HistoryMessage fromMessageSaveReq(MessageSendReq messageSendReq) {
+    public static HistoryMessage fromMessageSendReq(MessageSendReq messageSendReq) {
         return HistoryMessage.builder()
                 .localId(messageSendReq.getLocalId())
                 .remoteId(messageSendReq.getRemoteId())

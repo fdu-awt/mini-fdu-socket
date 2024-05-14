@@ -25,7 +25,7 @@ public class HistoryMessageService  implements IHistoryMessageService {
 
 //    @Override
     public static void save(MessageSendReq messageSendReq){
-        historyMessageDAO.save(HistoryMessage.fromMessageSaveReq(messageSendReq));
+        historyMessageDAO.save(HistoryMessage.fromMessageSendReq(messageSendReq));
     }
 
     @Override
