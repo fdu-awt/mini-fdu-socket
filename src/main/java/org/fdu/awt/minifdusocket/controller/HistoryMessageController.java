@@ -20,14 +20,14 @@ import java.util.List;
 @RequestMapping("/message-service")
 public class HistoryMessageController {
 
-    @Autowired
-    private WebSocket webSocket;
+    private final WebSocket webSocket;
 
     private final HistoryMessageService historyMessageService;
 
+    @Autowired
     public HistoryMessageController(HistoryMessageService historyMessageService, WebSocket webSocket) {
         this.historyMessageService = historyMessageService;
-
+        this.webSocket = webSocket;
     }
 
     @PostMapping("save-history-message")
