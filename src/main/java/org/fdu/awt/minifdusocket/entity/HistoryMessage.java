@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.fdu.awt.minifdusocket.bo.historyMessage.req.MessageSaveReq;
+import org.fdu.awt.minifdusocket.bo.historyMessage.req.MessageSendReq;
 
 import java.sql.Timestamp;
 
@@ -33,11 +33,11 @@ public class HistoryMessage {
     private Timestamp timeStamp;
 
 
-    public static HistoryMessage fromMessageSaveReq(MessageSaveReq messageSaveReq) {
+    public static HistoryMessage fromMessageSaveReq(MessageSendReq messageSendReq) {
         return HistoryMessage.builder()
-                .localId(messageSaveReq.getLocalId())
-                .remoteId(messageSaveReq.getRemoteId())
-                .content(messageSaveReq.getContent())
+                .localId(messageSendReq.getLocalId())
+                .remoteId(messageSendReq.getRemoteId())
+                .content(messageSendReq.getContent())
                 .timeStamp(new Timestamp(System.currentTimeMillis()))
                 .build();
     }

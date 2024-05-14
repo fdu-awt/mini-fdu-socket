@@ -1,7 +1,8 @@
 package org.fdu.awt.minifdusocket.controller;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.fdu.awt.minifdusocket.bo.historyMessage.req.MessageSaveReq;
+import org.fdu.awt.minifdusocket.bo.historyMessage.req.MessageSendReq;
 import org.fdu.awt.minifdusocket.bo.historyMessage.resp.MessageShowResp;
 import org.fdu.awt.minifdusocket.result.Result;
 import org.fdu.awt.minifdusocket.result.ResultFactory;
@@ -20,32 +21,27 @@ import java.util.List;
 @RequestMapping("/message-service")
 public class HistoryMessageController {
 
-    @Autowired
-    private WebSocket webSocket;
-
     private final HistoryMessageService historyMessageService;
 
-    public HistoryMessageController(HistoryMessageService historyMessageService, WebSocket webSocket) {
+    public HistoryMessageController(HistoryMessageService historyMessageService) {
         this.historyMessageService = historyMessageService;
 
     }
 
-    @PostMapping("save-history-message")
-    public Result saveHistoryMessage(@Validated @RequestBody MessageSaveReq messageSaveReq) {
-        try{
-            historyMessageService.save(messageSaveReq);
-            webSocket.sendOneMessage(messageSaveReq.getRemoteId(),messageSaveReq.getContent());
-
-            return ResultFactory.buildSuccessResult();
-        }
-        catch (DataIntegrityViolationException e){
-            return ResultFactory.buildFailResult("传入的id有误");
-        }
-        catch (RuntimeException e) {
-            return ResultFactory.buildInternalServerErrorResult();
-        }
-
-    }
+//    @PostMapping("save-history-message")
+//    public Result saveHistoryMessage(@Validated @RequestBody MessageSendReq messageSendReq) {
+//        try{
+//            historyMessageService.save(messageSendReq);
+//            return ResultFactory.buildSuccessResult();
+//        }
+//        catch (DataIntegrityViolationException e){
+//            return ResultFactory.buildFailResult("传入的id有误");
+//        }
+//        catch (RuntimeException e) {
+//            return ResultFactory.buildInternalServerErrorResult();
+//        }
+//
+//    }
 
     @GetMapping("get-history-message")
     public Result getHistoryMessage(@RequestParam("localId") Long localId, @RequestParam("remoteId") Long remoteId) {

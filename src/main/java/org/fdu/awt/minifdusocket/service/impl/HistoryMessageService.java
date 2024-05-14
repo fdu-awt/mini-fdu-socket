@@ -3,7 +3,7 @@ package org.fdu.awt.minifdusocket.service.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.fdu.awt.minifdusocket.entity.HistoryMessage;
 import org.fdu.awt.minifdusocket.bo.historyMessage.resp.MessageShowResp;
-import org.fdu.awt.minifdusocket.bo.historyMessage.req.MessageSaveReq;
+import org.fdu.awt.minifdusocket.bo.historyMessage.req.MessageSendReq;
 import org.fdu.awt.minifdusocket.dao.HistoryMessageDAO;
 import org.fdu.awt.minifdusocket.service.IHistoryMessageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,14 +18,14 @@ import java.util.stream.Stream;
 @Service
 public class HistoryMessageService  implements IHistoryMessageService {
 
-    private final HistoryMessageDAO historyMessageDAO;
+    private static HistoryMessageDAO historyMessageDAO;
 
     @Autowired
     public HistoryMessageService(HistoryMessageDAO historyMessageDAO) {this.historyMessageDAO = historyMessageDAO;}
 
-    @Override
-    public void save(MessageSaveReq messageSaveReq){
-        historyMessageDAO.save(HistoryMessage.fromMessageSaveReq(messageSaveReq));
+//    @Override
+    public static void save(MessageSendReq messageSendReq){
+        historyMessageDAO.save(HistoryMessage.fromMessageSaveReq(messageSendReq));
     }
 
     @Override

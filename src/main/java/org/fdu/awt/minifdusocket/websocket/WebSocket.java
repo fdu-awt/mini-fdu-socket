@@ -4,15 +4,20 @@ import jakarta.websocket.*;
 import jakarta.websocket.server.PathParam;
 import jakarta.websocket.server.ServerEndpoint;
 import lombok.extern.slf4j.Slf4j;
+import org.fdu.awt.minifdusocket.bo.historyMessage.req.MessageSendReq;
+import org.fdu.awt.minifdusocket.service.impl.HistoryMessageService;
 import org.springframework.stereotype.Component;
+import com.alibaba.fastjson2.JSONObject;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 @Component
 @Slf4j
-@ServerEndpoint(value = "/ws/{userId}")
+@ServerEndpoint(value = "/chat/{userId}")
 public class WebSocket {
+//    @Autowired
+//    private HistoryMessageService historyMessageService;
 
     //与某个客户端的连接会话，需要通过它来给客户端发送数据
     private Session session;
@@ -26,6 +31,7 @@ public class WebSocket {
     private static CopyOnWriteArraySet<WebSocket> webSockets =new CopyOnWriteArraySet<>();
     // 用来存在线连接用户信息
     private static ConcurrentHashMap<Long,Session> sessionPool = new ConcurrentHashMap<Long,Session>();
+
     /**
      * 链接成功调用的方法
      */
@@ -56,13 +62,27 @@ public class WebSocket {
     }
     /**
      * 收到客户端消息后调用的方法
-     *
      * @param message
      * @param
      */
     @OnMessage
     public void onMessage(String message) {
-        log.info("【websocket消息】收到客户端消息:"+message);
+        try {
+            //这里继续加type（从而来判断收到的前端具体的socket信息）
+            // 假设客户端发送的是一个 JSON 字符串，包含 remoteId 和 message
+            JSONObject jsonObject = JSONObject.parseObject(message);
+            String type = jsonObject.getString("type");
+            if (type.equals("chat")) {
+                Long remoteId = jsonObject.getLong("remoteId");
+                String textMessage = jsonObject.getString("message");
+                HistoryMessageService.save(new MessageSendReq(userId,remoteId,textMessage));
+                log.info("【websocket消息】收到客户端消息:" + textMessage);
+                sendOneMessage(remoteId, textMessage);
+            }
+
+        } catch (Exception e) {
+            log.error("【websocket消息】消息格式错误:" + message, e);
+        }
     }
 
     /** 发送错误时的处理
@@ -91,7 +111,7 @@ public class WebSocket {
     }
 
     // 此为单点消息
-    public void sendOneMessage(Long userId, String message) {
+    public static void sendOneMessage(Long userId, String message) {
         Session session = sessionPool.get(userId);
         if (session != null&&session.isOpen()) {
             try {
