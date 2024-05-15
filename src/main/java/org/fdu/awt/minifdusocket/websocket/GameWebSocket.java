@@ -72,7 +72,7 @@ public class GameWebSocket {
             String type = jsonObject.getString("type");
             switch (type) {
                 case "init":
-                    handleInitMessage(jsonObject);
+                    handleInitMessage(jsonObject.getJSONObject("data"));
                     break;
                 case "update":
                     handleUpdateMessage(jsonObject.getJSONObject("data"));
@@ -92,11 +92,10 @@ public class GameWebSocket {
     }
 
 
-    private void handleInitMessage(JSONObject jsonObject) {
-        Long userId = jsonObject.getLong("userId");
-        UserData userData = userDataMap.get(userId);
+    private void handleInitMessage(JSONObject jsonData) {
+        UserData userData = userDataMap.get(this.userId);
         if (userData != null) {
-            userData.updateUserData(jsonObject);
+            userData.updateUserData(jsonData);
             userData.setAction("Idle");
         }
     }
