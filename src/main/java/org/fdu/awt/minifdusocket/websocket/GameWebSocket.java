@@ -27,36 +27,48 @@ public class GameWebSocket {
     private Session session;
     private Long userId;
     private static final Set<GameWebSocket> webSockets = new CopyOnWriteArraySet<>();
+    /**
+     * key: userId, value: session
+     */
     private static final ConcurrentHashMap<Long, Session> sessionPool = new ConcurrentHashMap<>();
+    /**
+     * key: userId, value: userData
+     */
     private static final ConcurrentHashMap<Long, UserData> userDataMap = new ConcurrentHashMap<>();
 
     @OnOpen
     public void onOpen(Session session, @PathParam("userId") Long userId) {
-        this.session = session;
-        this.userId = userId;
-        webSockets.add(this);
-        sessionPool.put(userId, session);
-        userDataMap.put(userId, new UserData(userId));
-        log.info("【LocationWebSocket】有新的连接，总数为:{}", webSockets.size());
-        sendId(userId);
+        try {
+            this.session = session;
+            this.userId = userId;
+            webSockets.add(this);
+            sessionPool.put(userId, session);
+            userDataMap.put(userId, new UserData(userId));
+            log.info("【GameWebSocket】有新的连接，总数为:{}", webSockets.size());
+        } catch (Exception e) {
+            log.error("【GameWebSocket】连接时出错", e);
+        }
     }
 
     @OnClose
     public void onClose() {
-        webSockets.remove(this);
-        sessionPool.remove(this.userId);
-        userDataMap.remove(this.userId);
-        log.info("【LocationWebSocket】连接断开，总数为:{}", webSockets.size());
-        broadcastDeletePlayer(userId);
+        try {
+            webSockets.remove(this);
+            sessionPool.remove(this.userId);
+            userDataMap.remove(this.userId);
+            log.info("【GameWebSocket】连接断开，总数为:{}", webSockets.size());
+            broadcastDeletePlayer(userId);
+        } catch (Exception e) {
+            log.error("【GameWebSocket】关闭时出错", e);
+        }
     }
 
     @OnMessage
     public void onMessage(String message) {
-        log.info("【LocationWebSocket】收到客户端消息:{}", message);
         try {
+            log.info("【GameWebSocket】收到客户端消息:{}", message);
             JSONObject jsonObject = JSONObject.parseObject(message);
             String type = jsonObject.getString("type");
-
             switch (type) {
                 case "init":
                     handleInitMessage(jsonObject);
@@ -65,11 +77,11 @@ public class GameWebSocket {
                     handleUpdateMessage(jsonObject);
                     break;
                 default:
-                    log.error("【LocationWebSocket】未知消息类型:{}", type);
+                    log.error("【GameWebSocket】未知消息类型:{}", type);
                     break;
             }
         } catch (Exception e) {
-            log.error("【LocationWebSocket】消息格式错误:{}", message, e);
+            log.error("【GameWebSocket】消息格式错误:{}", message, e);
         }
     }
 
@@ -78,46 +90,23 @@ public class GameWebSocket {
         log.error("用户错误,原因:{}", error.getMessage());
     }
 
-    private void sendId(Long userId) {
-        JSONObject json = new JSONObject();
-        json.put("type", "setId");
-        json.put("id", userId);
-        sendMessageToOne(userId, json.toJSONString());
-    }
 
     private void handleInitMessage(JSONObject jsonObject) {
         Long userId = jsonObject.getLong("userId");
         UserData userData = userDataMap.get(userId);
         if (userData != null) {
-            setUserData(jsonObject, userData);
+            userData.updateUserData(jsonObject);
             userData.setAction("Idle");
         }
-    }
-
-    private void setUserData(JSONObject jsonObject, UserData userData) {
-        userData.setModel(jsonObject.getString("model"));
-        userData.setColour(jsonObject.getString("colour"));
-        userData.setX(jsonObject.getDouble("x"));
-        userData.setY(jsonObject.getDouble("y"));
-        userData.setZ(jsonObject.getDouble("z"));
-        userData.setHeading(jsonObject.getDouble("heading"));
-        userData.setPb(jsonObject.getDouble("pb"));
     }
 
     private void handleUpdateMessage(JSONObject jsonObject) {
         Long userId = jsonObject.getLong("userId");
         UserData userData = userDataMap.get(userId);
         if (userData != null) {
-            setUserData(jsonObject, userData);
+            userData.updateUserData(jsonObject);
             userData.setAction(jsonObject.getString("action"));
         }
-    }
-
-    private void handleChatMessage(JSONObject jsonObject) {
-        Long remoteId = jsonObject.getLong("remoteId");
-        String message = jsonObject.getString("message");
-        log.info("chat message: {} {}", remoteId, message);
-        sendMessageToOne(remoteId, jsonObject.toJSONString());
     }
 
     private void broadcastDeletePlayer(Long userId) {
@@ -125,13 +114,6 @@ public class GameWebSocket {
         json.put("type", "deletePlayer");
         json.put("id", userId);
         sendMessageToAll(json.toJSONString());
-    }
-
-    public static void sendMessageToOne(Long userId, String message) {
-        Session session = sessionPool.get(userId);
-        if (session != null && session.isOpen()) {
-            session.getAsyncRemote().sendText(message);
-        }
     }
 
     public static void sendMessageToAll(String message) {
@@ -157,8 +139,22 @@ public class GameWebSocket {
         public UserData(Long userId) {
             this.userId = userId;
         }
+
+        /**
+         * 使用 jsonObject 更新 userData
+         */
+        public void updateUserData(JSONObject jsonObject) {
+            setModel(jsonObject.getString("model"));
+            setColour(jsonObject.getString("colour"));
+            setX(jsonObject.getDouble("x"));
+            setY(jsonObject.getDouble("y"));
+            setZ(jsonObject.getDouble("z"));
+            setHeading(jsonObject.getDouble("heading"));
+            setPb(jsonObject.getDouble("pb"));
+        }
     }
 
+    // 定时任务，每40ms广播一次
     static {
         new Thread(() -> {
             while (true) {
