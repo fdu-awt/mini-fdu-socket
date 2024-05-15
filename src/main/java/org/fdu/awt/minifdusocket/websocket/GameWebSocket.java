@@ -75,7 +75,7 @@ public class GameWebSocket {
                     handleInitMessage(jsonObject);
                     break;
                 case "update":
-                    handleUpdateMessage(jsonObject);
+                    handleUpdateMessage(jsonObject.getJSONObject("data"));
                     break;
                 default:
                     log.error("【GameWebSocket】未知消息类型:{}", type);
@@ -101,12 +101,11 @@ public class GameWebSocket {
         }
     }
 
-    private void handleUpdateMessage(JSONObject jsonObject) {
-        Long userId = jsonObject.getLong("userId");
-        UserData userData = userDataMap.get(userId);
+    private void handleUpdateMessage(JSONObject jsonData) {
+        UserData userData = userDataMap.get(this.userId);
         if (userData != null) {
-            userData.updateUserData(jsonObject);
-            userData.setAction(jsonObject.getString("action"));
+            userData.updateUserData(jsonData);
+            userData.setAction(jsonData.getString("action"));
         }
     }
 
@@ -133,7 +132,7 @@ public class GameWebSocket {
         private double x;
         private double y;
         private double z;
-        private double heading;
+        private double h;
         private double pb;
         private String action;
 
@@ -150,7 +149,7 @@ public class GameWebSocket {
             setX(jsonObject.getDouble("x"));
             setY(jsonObject.getDouble("y"));
             setZ(jsonObject.getDouble("z"));
-            setHeading(jsonObject.getDouble("heading"));
+            setH(jsonObject.getDouble("h"));
             setPb(jsonObject.getDouble("pb"));
         }
 
@@ -163,7 +162,7 @@ public class GameWebSocket {
             userJson.put("x", userData.getX());
             userJson.put("y", userData.getY());
             userJson.put("z", userData.getZ());
-            userJson.put("heading", userData.getHeading());
+            userJson.put("h", userData.getH());
             userJson.put("pb", userData.getPb());
             userJson.put("action", userData.getAction());
             return userJson;
