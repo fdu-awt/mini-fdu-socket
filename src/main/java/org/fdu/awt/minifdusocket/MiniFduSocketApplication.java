@@ -9,5 +9,4 @@ public class MiniFduSocketApplication {
     public static void main(String[] args) {
         SpringApplication.run(MiniFduSocketApplication.class, args);
     }
-
 }

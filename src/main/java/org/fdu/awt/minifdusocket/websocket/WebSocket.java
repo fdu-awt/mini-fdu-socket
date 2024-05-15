@@ -1,14 +1,14 @@
 package org.fdu.awt.minifdusocket.websocket;
 
+import com.alibaba.fastjson2.JSONObject;
 import jakarta.websocket.*;
 import jakarta.websocket.server.PathParam;
 import jakarta.websocket.server.ServerEndpoint;
 import lombok.extern.slf4j.Slf4j;
 import org.fdu.awt.minifdusocket.bo.historyMessage.req.MessageSendReq;
 import org.fdu.awt.minifdusocket.service.impl.HistoryMessageService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.fdu.awt.minifdusocket.utils.SpringContext;
 import org.springframework.stereotype.Component;
-import com.alibaba.fastjson2.JSONObject;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -19,9 +19,13 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class WebSocket {
     private final HistoryMessageService historyMessageService;
 
-    @Autowired
-    public WebSocket(HistoryMessageService historyMessageService){
-        this.historyMessageService = historyMessageService;
+    /**
+     * 无参构造函数，必须有
+     * Jakarta WebSocket 规范要求WebSocket端点实例的创建过程能够处理无参构造函数 <br/>
+     */
+    public WebSocket() {
+        // 手动获取HistoryMessageService实例
+        this.historyMessageService = SpringContext.getBean(HistoryMessageService.class);
     }
 
     //与某个客户端的连接会话，需要通过它来给客户端发送数据
@@ -83,13 +87,12 @@ public class WebSocket {
             if (type.equals("chat")) {
                 Long remoteId = jsonObject.getLong("remoteId");
                 String textMessage = jsonObject.getString("message");
-                HistoryMessageService.save(new MessageSendReq(userId,remoteId,textMessage));
-                log.info("【websocket消息】收到客户端消息:" + textMessage);
+                historyMessageService.save(new MessageSendReq(userId, remoteId, textMessage));
+                log.info("【websocket消息】收到客户端消息:{}", textMessage);
                 sendOneMessage(remoteId, textMessage);
             }
-
         } catch (Exception e) {
-            log.error("【websocket消息】消息格式错误:" + message, e);
+            log.error("【websocket消息】消息格式错误:{}", message, e);
         }
     }
 
@@ -97,7 +100,7 @@ public class WebSocket {
      * 发送错误时的处理
      *
      * @param session session
-     * @param error  错误
+     * @param error   错误
      */
     @OnError
     public void onError(Session session, Throwable error) {

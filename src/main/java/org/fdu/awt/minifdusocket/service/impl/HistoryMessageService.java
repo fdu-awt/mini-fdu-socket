@@ -1,14 +1,15 @@
 package org.fdu.awt.minifdusocket.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.fdu.awt.minifdusocket.entity.HistoryMessage;
-import org.fdu.awt.minifdusocket.bo.historyMessage.resp.MessageShowResp;
 import org.fdu.awt.minifdusocket.bo.historyMessage.req.MessageSendReq;
+import org.fdu.awt.minifdusocket.bo.historyMessage.resp.MessageShowResp;
 import org.fdu.awt.minifdusocket.dao.HistoryMessageDAO;
+import org.fdu.awt.minifdusocket.entity.HistoryMessage;
 import org.fdu.awt.minifdusocket.service.IHistoryMessageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -18,15 +19,15 @@ import java.util.stream.Stream;
 @Service
 public class HistoryMessageService implements IHistoryMessageService {
 
-    private static HistoryMessageDAO historyMessageDAO;
+    private final HistoryMessageDAO historyMessageDAO;
 
     @Autowired
     public HistoryMessageService(HistoryMessageDAO historyMessageDAO) {
-        HistoryMessageService.historyMessageDAO = historyMessageDAO;
+        this.historyMessageDAO = historyMessageDAO;
     }
 
-    //    @Override
-    public static void save(MessageSendReq messageSendReq) {
+    @Override
+    public void save(MessageSendReq messageSendReq) {
         historyMessageDAO.save(HistoryMessage.fromMessageSendReq(messageSendReq));
     }
 
@@ -40,7 +41,7 @@ public class HistoryMessageService implements IHistoryMessageService {
                 .toList();
 
         return allMessages.stream()
-                .sorted((message1, message2) -> message1.getTimeStamp().compareTo(message2.getTimeStamp()))
+                .sorted(Comparator.comparing(HistoryMessage::getTimeStamp))
                 .map(message -> {
                     MessageShowResp resp = new MessageShowResp();
                     resp.setMessage(message.getContent());
