@@ -1,6 +1,7 @@
 package org.fdu.awt.minifdusocket.websocket;
 
 
+import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import jakarta.websocket.*;
 import jakarta.websocket.server.PathParam;
@@ -152,6 +153,21 @@ public class GameWebSocket {
             setHeading(jsonObject.getDouble("heading"));
             setPb(jsonObject.getDouble("pb"));
         }
+
+        public JSONObject toJsonObject() {
+            UserData userData = this;
+            JSONObject userJson = new JSONObject();
+            userJson.put("id", userData.getUserId());
+            userJson.put("model", userData.getModel());
+            userJson.put("colour", userData.getColour());
+            userJson.put("x", userData.getX());
+            userJson.put("y", userData.getY());
+            userJson.put("z", userData.getZ());
+            userJson.put("heading", userData.getHeading());
+            userJson.put("pb", userData.getPb());
+            userJson.put("action", userData.getAction());
+            return userJson;
+        }
     }
 
     // 定时任务，每40ms广播一次
@@ -171,21 +187,13 @@ public class GameWebSocket {
     private static void broadcastRemoteData() {
         JSONObject json = new JSONObject();
         json.put("type", "remoteData");
+        JSONArray jsonArray = new JSONArray();
         for (UserData userData : userDataMap.values()) {
             if (userData.getModel() != null) {
-                JSONObject userJson = new JSONObject();
-                userJson.put("id", userData.getUserId());
-                userJson.put("model", userData.getModel());
-                userJson.put("colour", userData.getColour());
-                userJson.put("x", userData.getX());
-                userJson.put("y", userData.getY());
-                userJson.put("z", userData.getZ());
-                userJson.put("heading", userData.getHeading());
-                userJson.put("pb", userData.getPb());
-                userJson.put("action", userData.getAction());
-                json.put(userData.getUserId().toString(), userJson);
+                jsonArray.add(userData.toJsonObject());
             }
         }
+        json.put("data", jsonArray);
         sendMessageToAll(json.toJSONString());
     }
 }
