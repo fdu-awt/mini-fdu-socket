@@ -1,17 +1,16 @@
 package org.fdu.awt.minifdusocket.controller;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.fdu.awt.minifdusocket.bo.historyMessage.req.MessageSendReq;
 import org.fdu.awt.minifdusocket.bo.historyMessage.resp.MessageShowResp;
 import org.fdu.awt.minifdusocket.result.Result;
 import org.fdu.awt.minifdusocket.result.ResultFactory;
 import org.fdu.awt.minifdusocket.service.impl.HistoryMessageService;
-import org.fdu.awt.minifdusocket.websocket.WebSocket;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -23,9 +22,9 @@ public class HistoryMessageController {
 
     private final HistoryMessageService historyMessageService;
 
+    @Autowired
     public HistoryMessageController(HistoryMessageService historyMessageService) {
         this.historyMessageService = historyMessageService;
-
     }
 
 //    @PostMapping("save-history-message")
@@ -45,11 +44,10 @@ public class HistoryMessageController {
 
     @GetMapping("get-history-message")
     public Result getHistoryMessage(@RequestParam("localId") Long localId, @RequestParam("remoteId") Long remoteId) {
-        List<MessageShowResp> historyMessageRespList = historyMessageService.getHistoryMessages(localId,remoteId);
-        if(historyMessageRespList.isEmpty()) {
+        List<MessageShowResp> historyMessageRespList = historyMessageService.getHistoryMessages(localId, remoteId);
+        if (historyMessageRespList.isEmpty()) {
             return ResultFactory.buildFailResult("您当前无历史信息");
-        }
-        else{
+        } else {
             return ResultFactory.buildSuccessResult(historyMessageRespList);
         }
     }

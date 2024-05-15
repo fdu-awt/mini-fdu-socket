@@ -16,14 +16,14 @@ import java.util.concurrent.CopyOnWriteArraySet;
 @Component
 @Slf4j
 @ServerEndpoint(value = "/chat/{userId}")
-public class WebSocket {
+public class ChatWebSocket {
     private final HistoryMessageService historyMessageService;
 
     /**
      * 无参构造函数，必须有
      * Jakarta WebSocket 规范要求WebSocket端点实例的创建过程能够处理无参构造函数 <br/>
      */
-    public WebSocket() {
+    public ChatWebSocket() {
         // 手动获取HistoryMessageService实例
         this.historyMessageService = SpringContext.getBean(HistoryMessageService.class);
     }
@@ -37,7 +37,7 @@ public class WebSocket {
     //concurrent包的线程安全Set，用来存放每个客户端对应的MyWebSocket对象。
     //虽然@Component默认是单例模式的，但springboot还是会为每个websocket连接初始化一个bean，所以可以用一个静态set保存起来。
     //  注：底下WebSocket是当前类名
-    private static final CopyOnWriteArraySet<WebSocket> webSockets = new CopyOnWriteArraySet<>();
+    private static final CopyOnWriteArraySet<ChatWebSocket> webSockets = new CopyOnWriteArraySet<>();
     // 用来存在线连接用户信息
     private static final ConcurrentHashMap<Long, Session> sessionPool = new ConcurrentHashMap<>();
 
@@ -53,7 +53,7 @@ public class WebSocket {
             sessionPool.put(userId, session);
             log.info("【websocket消息】有新的连接，总数为:{}", webSockets.size());
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            log.error("【websocket消息】连接时出错", e);
         }
     }
 
@@ -78,8 +78,8 @@ public class WebSocket {
      */
     @OnMessage
     public void onMessage(String message) {
-        log.info("【websocket消息】收到客户端消息:{}", message);
         try {
+            log.info("【websocket消息】收到客户端消息:{}", message);
             //这里继续加type（从而来判断收到的前端具体的socket信息）
             // 假设客户端发送的是一个 JSON 字符串，包含 remoteId 和 message
             JSONObject jsonObject = JSONObject.parseObject(message);
@@ -87,9 +87,11 @@ public class WebSocket {
             if (type.equals("chat")) {
                 Long remoteId = jsonObject.getLong("remoteId");
                 String textMessage = jsonObject.getString("message");
-                historyMessageService.save(new MessageSendReq(userId, remoteId, textMessage));
                 log.info("【websocket消息】收到客户端消息:{}", textMessage);
+                historyMessageService.save(new MessageSendReq(userId, remoteId, textMessage));
                 sendOneMessage(remoteId, textMessage);
+            } else {
+                log.error("【websocket消息】未知消息类型:{}", type);
             }
         } catch (Exception e) {
             log.error("【websocket消息】消息格式错误:{}", message, e);
@@ -108,10 +110,12 @@ public class WebSocket {
     }
 
 
-    // 此为广播消息
+    /**
+     * 此为广播消息
+     */
     public void sendAllMessage(String message) {
         log.info("【websocket消息】广播消息:{}", message);
-        for (WebSocket webSocket : webSockets) {
+        for (ChatWebSocket webSocket : webSockets) {
             try {
                 if (webSocket.session.isOpen()) {
                     webSocket.session.getAsyncRemote().sendText(message);
@@ -122,7 +126,9 @@ public class WebSocket {
         }
     }
 
-    // 此为单点消息
+    /**
+     * 此为单点消息
+     */
     public static void sendOneMessage(Long userId, String message) {
         Session session = sessionPool.get(userId);
         if (session != null && session.isOpen()) {
@@ -135,7 +141,9 @@ public class WebSocket {
         }
     }
 
-    // 此为单点消息(多人)
+    /**
+     * 此为单点消息(多人)
+     */
     public void sendMoreMessage(String[] userIds, String message) {
         for (String userId : userIds) {
             Session session = sessionPool.get(Long.valueOf(userId));
