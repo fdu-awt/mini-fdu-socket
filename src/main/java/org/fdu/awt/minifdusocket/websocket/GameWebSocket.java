@@ -71,11 +71,8 @@ public class GameWebSocket {
             JSONObject jsonObject = JSONObject.parseObject(message);
             String type = jsonObject.getString("type");
             switch (type) {
-                case "init":
-                    handleInitMessage(jsonObject.getJSONObject("data"));
-                    break;
-                case "update":
-                    handleUpdateMessage(jsonObject.getJSONObject("data"));
+                case "local_update":
+                    handleInitOrUpdateMessage(jsonObject.getJSONObject("data"));
                     break;
                 default:
                     log.error("【GameWebSocket】未知消息类型:{}", type);
@@ -92,26 +89,17 @@ public class GameWebSocket {
     }
 
 
-    private void handleInitMessage(JSONObject jsonData) {
+    private void handleInitOrUpdateMessage(JSONObject jsonData) {
         UserData userData = userDataMap.get(this.userId);
         if (userData != null) {
             userData.updateUserData(jsonData);
-            userData.setAction("Idle");
-        }
-    }
-
-    private void handleUpdateMessage(JSONObject jsonData) {
-        UserData userData = userDataMap.get(this.userId);
-        if (userData != null) {
-            userData.updateUserData(jsonData);
-            userData.setAction(jsonData.getString("action"));
         }
     }
 
     private void broadcastDeletePlayer(Long userId) {
         JSONObject json = new JSONObject();
         json.put("type", "deletePlayer");
-        json.put("id", userId);
+        json.put("userId", userId);
         sendMessageToAll(json.toJSONString());
     }
 
@@ -150,12 +138,13 @@ public class GameWebSocket {
             setZ(jsonObject.getDouble("z"));
             setH(jsonObject.getDouble("h"));
             setPb(jsonObject.getDouble("pb"));
+            setAction(jsonObject.getString("action"));
         }
 
         public JSONObject toJsonObject() {
             UserData userData = this;
             JSONObject userJson = new JSONObject();
-            userJson.put("id", userData.getUserId());
+            userJson.put("userId", userData.getUserId());
             userJson.put("model", userData.getModel());
             userJson.put("colour", userData.getColour());
             userJson.put("x", userData.getX());
