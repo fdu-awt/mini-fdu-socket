@@ -16,28 +16,30 @@ import java.util.stream.Stream;
 
 @Slf4j
 @Service
-public class HistoryMessageService  implements IHistoryMessageService {
+public class HistoryMessageService implements IHistoryMessageService {
 
     private static HistoryMessageDAO historyMessageDAO;
 
     @Autowired
-    public HistoryMessageService(HistoryMessageDAO historyMessageDAO) {this.historyMessageDAO = historyMessageDAO;}
+    public HistoryMessageService(HistoryMessageDAO historyMessageDAO) {
+        HistoryMessageService.historyMessageDAO = historyMessageDAO;
+    }
 
-//    @Override
-    public static void save(MessageSendReq messageSendReq){
+    //    @Override
+    public static void save(MessageSendReq messageSendReq) {
         historyMessageDAO.save(HistoryMessage.fromMessageSendReq(messageSendReq));
     }
 
     @Override
     public List<MessageShowResp> getHistoryMessages(Long localId, Long remoteId) {
-        List<HistoryMessage> selfHistoryMessages =  historyMessageDAO.findByLocalIdAndRemoteId(localId, remoteId);
-        List<HistoryMessage> remoteHistoryMessages =  historyMessageDAO.findByLocalIdAndRemoteId(remoteId, localId);
+        List<HistoryMessage> selfHistoryMessages = historyMessageDAO.findByLocalIdAndRemoteId(localId, remoteId);
+        List<HistoryMessage> remoteHistoryMessages = historyMessageDAO.findByLocalIdAndRemoteId(remoteId, localId);
 
         List<HistoryMessage> allMessages = Stream.of(selfHistoryMessages, remoteHistoryMessages)
                 .flatMap(List::stream)
-                .collect(Collectors.toList());
+                .toList();
 
-        List<MessageShowResp> sortedHistoryMessages = allMessages.stream()
+        return allMessages.stream()
                 .sorted((message1, message2) -> message1.getTimeStamp().compareTo(message2.getTimeStamp()))
                 .map(message -> {
                     MessageShowResp resp = new MessageShowResp();
@@ -47,9 +49,6 @@ public class HistoryMessageService  implements IHistoryMessageService {
                     return resp;
                 })
                 .collect(Collectors.toList());
-
-        return sortedHistoryMessages;
     }
-
 
 }
