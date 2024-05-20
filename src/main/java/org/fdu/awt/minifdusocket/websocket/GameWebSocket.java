@@ -45,7 +45,7 @@ public class GameWebSocket {
             webSockets.add(this);
             sessionPool.put(userId, session);
             userDataMap.put(userId, new UserData(userId));
-            log.info("【GameWebSocket】有新的连接，总数为:{}", webSockets.size());
+            log.info("【GameWebSocket】用户 {} 加入连接，总数为:{}", userId, webSockets.size());
         } catch (Exception e) {
             log.error("【GameWebSocket】连接时出错", e);
         }
