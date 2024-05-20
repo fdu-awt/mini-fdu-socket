@@ -67,7 +67,7 @@ public class GameWebSocket {
     @OnMessage
     public void onMessage(String message) {
         try {
-            log.info("【GameWebSocket】收到客户端消息:{}", message);
+//            log.info("【GameWebSocket】收到客户端消息:{}", message);
             JSONObject jsonObject = JSONObject.parseObject(message);
             String type = jsonObject.getString("type");
             switch (type) {
