@@ -83,29 +83,10 @@ public class ChatWebSocket {
             //这里继续加type（从而来判断收到的前端具体的socket信息）
             JSONObject jsonObject = JSONObject.parseObject(message);
             String type = jsonObject.getString("type");
-            JSONObject data = jsonObject.getJSONObject("data");
-            switch (type) {
-                case "chat":
-                    handleChatMessage(jsonObject);
-                    break;
-                case "video-invite":
-                    handleVideoInvite(data);
-                    break;
-                case "video-accept":
-                    handleVideoAccept(data);
-                    break;
-                case "video-reject": // TODO 暂时无, 未来可能会用到
-                    handleVideoReject(data);
-                    break;
-                case "video-processing":
-                    handleVideoProcessing(data);
-                    break;
-                case "video-end":
-                    handleVideoEnd(data);
-                    break;
-                default:
-                    log.error("【websocket消息】未知消息类型:{}", type);
-                    break;
+            if (type.equals("chat")) {
+                handleChatMessage(jsonObject);
+            } else {
+                log.error("【websocket消息】未知消息类型:{}", type);
             }
         } catch (Exception e) {
             log.error("【websocket消息】消息格式错误:{}", message, e);
@@ -126,37 +107,6 @@ public class ChatWebSocket {
         sendOneMessage(remoteId, textMessage);
         sendOneMessage(userId, textMessage);
     }
-
-    public void handleVideoInvite(JSONObject data) {
-        // TODO
-        // 约定：客户端发送的是一个 JSON 字符串，包含 remoteId
-        Long remoteId = data.getLong("remoteId");
-    }
-
-    public void handleVideoAccept(JSONObject data) {
-        // TODO
-        // 约定：客户端发送的是一个 JSON 字符串，包含 remoteId
-        Long remoteId = data.getLong("remoteId");
-    }
-
-    public void handleVideoReject(JSONObject data) {
-        // TODO
-        // 约定：客户端发送的是一个 JSON 字符串，包含 remoteId
-        Long remoteId = data.getLong("remoteId");
-    }
-
-    public void handleVideoProcessing(JSONObject data) {
-        // TODO
-        // 约定：客户端发送的是一个 JSON 字符串，包含 remoteId
-        Long remoteId = data.getLong("remoteId");
-    }
-
-    public void handleVideoEnd(JSONObject data) {
-        // TODO
-        // 约定：客户端发送的是一个 JSON 字符串，包含 remoteId
-        Long remoteId = data.getLong("remoteId");
-    }
-
 
     /**
      * 发送错误时的处理
