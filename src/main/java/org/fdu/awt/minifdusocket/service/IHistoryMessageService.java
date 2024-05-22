@@ -7,13 +7,9 @@ import java.sql.Timestamp;
 import java.util.List;
 
 public interface IHistoryMessageService {
-
     void save(MessageSendReq messageSendReq);
 
-    /**
-     * @param durationInSec 通话时长(秒)
-     */
-    void videoChatEnd(Long localId, Long remoteId, Long durationInSec, Timestamp startTime);
+    void videoChatEnd(Long localId, Long remoteId, Timestamp startTime, Timestamp endTime);
 
     //获取历史聊天信息
     List<MessageShowResp> getHistoryMessages(Long localId, Long remoteId);

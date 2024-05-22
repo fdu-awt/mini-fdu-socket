@@ -34,11 +34,16 @@ public class HistoryMessageService implements IHistoryMessageService {
     }
 
     @Override
-    public void videoChatEnd(Long localId, Long remoteId, Long durationInSec, Timestamp startTime) {
+    public void videoChatEnd(Long localId, Long remoteId,
+                             Timestamp startTime,
+                             Timestamp endTime) {
+        Long durationInSec = endTime.getTime() - startTime.getTime();
         historyMessageDAO.save(HistoryMessage.builder()
                 .localId(localId)
                 .remoteId(remoteId)
                 .content(VIDEO_CHAT_END_MESSAGE + TimeFormatter.formatDuration(durationInSec))
+                .timeStamp(endTime)
+                .type("video")
                 .build());
     }
 
