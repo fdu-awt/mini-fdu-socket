@@ -1,8 +1,13 @@
 package org.fdu.awt.minifdusocket.bo.historyMessage.req;
 
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 @Data
+@Builder
+@NoArgsConstructor
 public class MessageSendReq {
 
     @NotNull(message = "本地用户id必填")
@@ -17,7 +22,6 @@ public class MessageSendReq {
 
     @NotNull(message = "type必须指定")
     private String type;
-
 
 
     public MessageSendReq(Long userId, Long remoteId, String textMessage, String type) {
