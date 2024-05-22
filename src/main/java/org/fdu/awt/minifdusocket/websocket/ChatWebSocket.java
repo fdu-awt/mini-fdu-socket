@@ -51,7 +51,7 @@ public class ChatWebSocket {
             this.userId = userId;
             webSockets.add(this);
             sessionPool.put(userId, session);
-            log.info("【websocket消息】有新的连接，总数为:{}", webSockets.size());
+            log.info("【websocket消息】用户 {} 连接，总数为:{}", userId, webSockets.size());
         } catch (Exception e) {
             log.error("【websocket消息】连接时出错", e);
         }
@@ -65,11 +65,12 @@ public class ChatWebSocket {
         try {
             webSockets.remove(this);
             sessionPool.remove(this.userId);
-            log.info("【websocket消息】连接断开，总数为:{}", webSockets.size());
+            log.info("【websocket消息】用户 {} 连接断开，总数为:{}", this.userId, webSockets.size());
         } catch (Exception e) {
             log.error("【websocket消息】连接断开时出错", e);
         }
     }
+
     /**
      * 收到客户端消息后调用的方法
      *
@@ -78,25 +79,84 @@ public class ChatWebSocket {
     @OnMessage
     public void onMessage(String message) {
         try {
-            log.info("【websocket消息】收到客户端消息:{}", message);
+            log.info("【websocket消息】收到用户 {} 的message: {}", userId, message);
             //这里继续加type（从而来判断收到的前端具体的socket信息）
-            // 假设客户端发送的是一个 JSON 字符串，包含 remoteId 和 message
             JSONObject jsonObject = JSONObject.parseObject(message);
             String type = jsonObject.getString("type");
-            if (type.equals("chat")) {
-                Long remoteId = jsonObject.getLong("remoteId");
-                String textMessage = jsonObject.getString("message");
-                log.info("【websocket消息】收到客户端消息:{}", textMessage);
-                historyMessageService.save(new MessageSendReq(userId, remoteId, textMessage,"text"));
-                sendOneMessage(remoteId, textMessage);
-                sendOneMessage(userId, textMessage);
-            } else {
-                log.error("【websocket消息】未知消息类型:{}", type);
+            JSONObject data = jsonObject.getJSONObject("data");
+            switch (type) {
+                case "chat":
+                    handleChatMessage(jsonObject);
+                    break;
+                case "video-invite":
+                    handleVideoInvite(data);
+                    break;
+                case "video-accept":
+                    handleVideoAccept(data);
+                    break;
+                case "video-reject": // TODO 暂时无, 未来可能会用到
+                    handleVideoReject(data);
+                    break;
+                case "video-processing":
+                    handleVideoProcessing(data);
+                    break;
+                case "video-end":
+                    handleVideoEnd(data);
+                    break;
+                default:
+                    log.error("【websocket消息】未知消息类型:{}", type);
+                    break;
             }
         } catch (Exception e) {
             log.error("【websocket消息】消息格式错误:{}", message, e);
         }
     }
+
+    public void handleChatMessage(JSONObject jsonObject) {
+        // 约定：客户端发送的是一个 JSON 字符串，包含 remoteId 和 message
+        Long remoteId = jsonObject.getLong("remoteId");
+        String textMessage = jsonObject.getString("message");
+        log.info("【websocket消息】收到客户端消息:{}", textMessage);
+        historyMessageService.save(MessageSendReq.builder()
+                .localId(userId)
+                .remoteId(remoteId)
+                .content(textMessage)
+                .type("text")
+                .build());
+        sendOneMessage(remoteId, textMessage);
+        sendOneMessage(userId, textMessage);
+    }
+
+    public void handleVideoInvite(JSONObject data) {
+        // TODO
+        // 约定：客户端发送的是一个 JSON 字符串，包含 remoteId
+        Long remoteId = data.getLong("remoteId");
+    }
+
+    public void handleVideoAccept(JSONObject data) {
+        // TODO
+        // 约定：客户端发送的是一个 JSON 字符串，包含 remoteId
+        Long remoteId = data.getLong("remoteId");
+    }
+
+    public void handleVideoReject(JSONObject data) {
+        // TODO
+        // 约定：客户端发送的是一个 JSON 字符串，包含 remoteId
+        Long remoteId = data.getLong("remoteId");
+    }
+
+    public void handleVideoProcessing(JSONObject data) {
+        // TODO
+        // 约定：客户端发送的是一个 JSON 字符串，包含 remoteId
+        Long remoteId = data.getLong("remoteId");
+    }
+
+    public void handleVideoEnd(JSONObject data) {
+        // TODO
+        // 约定：客户端发送的是一个 JSON 字符串，包含 remoteId
+        Long remoteId = data.getLong("remoteId");
+    }
+
 
     /**
      * 发送错误时的处理
@@ -106,9 +166,8 @@ public class ChatWebSocket {
      */
     @OnError
     public void onError(Session session, Throwable error) {
-        log.error("用户错误,原因:{}", error.getMessage());
+        log.error("用户 {} 错误, 原因: {}", userId, error.getMessage());
     }
-
 
     /**
      * 此为广播消息
