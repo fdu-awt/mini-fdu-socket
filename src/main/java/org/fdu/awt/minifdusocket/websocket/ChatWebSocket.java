@@ -87,7 +87,7 @@ public class ChatWebSocket {
                 Long remoteId = jsonObject.getLong("remoteId");
                 String textMessage = jsonObject.getString("message");
                 log.info("【websocket消息】收到客户端消息:{}", textMessage);
-                historyMessageService.save(new MessageSendReq(userId, remoteId, textMessage));
+                historyMessageService.save(new MessageSendReq(userId, remoteId, textMessage,"text"));
                 sendOneMessage(remoteId, textMessage);
                 sendOneMessage(userId, textMessage);
             } else {
@@ -135,6 +135,7 @@ public class ChatWebSocket {
         if (session != null && session.isOpen()) {
             try {
                 log.info("【websocket消息】 单点消息:{}", message);
+                //这里还需要优化
                 if(id.equals(userId)) {
                  ifSelf = "true";
                 }

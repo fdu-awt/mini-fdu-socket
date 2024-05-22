@@ -8,6 +8,7 @@ CREATE TABLE `history_message`
     `remote_id` INT NOT NULL,
     `content` VARCHAR(255) NOT NULL,
     `time_stamp` TIMESTAMP NOT NULL,
+    `type` VARCHAR(255) NOT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;

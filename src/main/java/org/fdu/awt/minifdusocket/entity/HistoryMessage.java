@@ -32,6 +32,8 @@ public class HistoryMessage {
     @Column(nullable = false, name = "time_stamp")
     private Timestamp timeStamp;
 
+    @Column(nullable = false, name = "type")
+    private String type;
 
     public static HistoryMessage fromMessageSendReq(MessageSendReq messageSendReq) {
         return HistoryMessage.builder()
@@ -39,6 +41,7 @@ public class HistoryMessage {
                 .remoteId(messageSendReq.getRemoteId())
                 .content(messageSendReq.getContent())
                 .timeStamp(new Timestamp(System.currentTimeMillis()))
+                .type(messageSendReq.getType())
                 .build();
     }
 

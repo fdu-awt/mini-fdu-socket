@@ -47,6 +47,7 @@ public class HistoryMessageService implements IHistoryMessageService {
                     resp.setMessage(message.getContent());
                     resp.setTimestamp(message.getTimeStamp());
                     resp.setIfSelf(localId.equals(message.getLocalId()));
+                    resp.setType(message.getType());
                     return resp;
                 })
                 .collect(Collectors.toList());

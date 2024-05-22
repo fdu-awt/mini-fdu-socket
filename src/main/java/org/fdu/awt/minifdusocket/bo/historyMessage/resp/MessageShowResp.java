@@ -16,4 +16,5 @@ public class MessageShowResp {
     private String message;
     private Timestamp timestamp ;
     private boolean ifSelf;
+    private String type;
 }

@@ -15,9 +15,15 @@ public class MessageSendReq {
     private String content;
 
 
-    public MessageSendReq(Long userId, Long remoteId, String textMessage) {
+    @NotNull(message = "type必须指定")
+    private String type;
+
+
+
+    public MessageSendReq(Long userId, Long remoteId, String textMessage, String type) {
         this.localId = userId;
         this.remoteId = remoteId;
         this.content = textMessage;
+        this.type = type;
     }
 }
