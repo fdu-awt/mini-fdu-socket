@@ -114,6 +114,7 @@ public class GameWebSocket {
     @Data
     private static class UserData {
         private Long userId;
+        private String username;
         private String model;
         private String colour;
         private double x;
@@ -131,6 +132,7 @@ public class GameWebSocket {
          * 使用 jsonObject 更新 userData
          */
         public void updateUserData(JSONObject jsonObject) {
+            setUsername(jsonObject.getString("username"));
             setModel(jsonObject.getString("model"));
             setColour(jsonObject.getString("colour"));
             setX(jsonObject.getDouble("x"));
@@ -145,6 +147,7 @@ public class GameWebSocket {
             UserData userData = this;
             JSONObject userJson = new JSONObject();
             userJson.put("userId", userData.getUserId());
+            userJson.put("username", userData.getUsername());
             userJson.put("model", userData.getModel());
             userJson.put("colour", userData.getColour());
             userJson.put("x", userData.getX());
