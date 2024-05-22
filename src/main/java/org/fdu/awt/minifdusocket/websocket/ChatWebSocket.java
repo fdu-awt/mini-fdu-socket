@@ -131,18 +131,19 @@ public class ChatWebSocket {
      */
     public void sendOneMessage(Long id, String message) {
         Session session = sessionPool.get(id);
-        String ifSelf;
         if (session != null && session.isOpen()) {
             try {
                 log.info("【websocket消息】 单点消息:{}", message);
-                //这里还需要优化
-                if(id.equals(userId)) {
-                 ifSelf = "true";
-                }
-                else{
-                    ifSelf = "false";
-                }
-                session.getAsyncRemote().sendText(message+ifSelf);
+                // 创建一个JSONObject来封装消息
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("message", message); // 消息内容
+                jsonObject.put("remoteId", id); // 远程ID
+                jsonObject.put("localId", userId); // 本地ID
+                String ifSelf = id.equals(userId) ? "true" : "false"; // 判断是否是给自己发送消息
+                jsonObject.put("ifSelf", ifSelf); // 是否给自己发送消息
+
+                // 将JSONObject转换为JSON字符串并发送
+                session.getAsyncRemote().sendText(jsonObject.toJSONString());
             } catch (Exception e) {
                 log.error("【websocket消息】 单点消息出错", e);
             }
