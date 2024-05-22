@@ -70,7 +70,6 @@ public class ChatWebSocket {
             log.error("【websocket消息】连接断开时出错", e);
         }
     }
-
     /**
      * 收到客户端消息后调用的方法
      *
@@ -90,6 +89,7 @@ public class ChatWebSocket {
                 log.info("【websocket消息】收到客户端消息:{}", textMessage);
                 historyMessageService.save(new MessageSendReq(userId, remoteId, textMessage));
                 sendOneMessage(remoteId, textMessage);
+                sendOneMessage(userId, textMessage);
             } else {
                 log.error("【websocket消息】未知消息类型:{}", type);
             }
@@ -129,12 +129,19 @@ public class ChatWebSocket {
     /**
      * 此为单点消息
      */
-    public static void sendOneMessage(Long userId, String message) {
-        Session session = sessionPool.get(userId);
+    public void sendOneMessage(Long id, String message) {
+        Session session = sessionPool.get(id);
+        String ifSelf;
         if (session != null && session.isOpen()) {
             try {
                 log.info("【websocket消息】 单点消息:{}", message);
-                session.getAsyncRemote().sendText(message);
+                if(id.equals(userId)) {
+                 ifSelf = "true";
+                }
+                else{
+                    ifSelf = "false";
+                }
+                session.getAsyncRemote().sendText(message+ifSelf);
             } catch (Exception e) {
                 log.error("【websocket消息】 单点消息出错", e);
             }
