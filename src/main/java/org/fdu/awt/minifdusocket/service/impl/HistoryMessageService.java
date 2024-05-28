@@ -6,9 +6,11 @@ import org.fdu.awt.minifdusocket.bo.historyMessage.resp.MessageShowResp;
 import org.fdu.awt.minifdusocket.dao.HistoryMessageDAO;
 import org.fdu.awt.minifdusocket.entity.HistoryMessage;
 import org.fdu.awt.minifdusocket.service.IHistoryMessageService;
+import org.fdu.awt.minifdusocket.utils.TimeFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,7 +20,7 @@ import java.util.stream.Stream;
 @Slf4j
 @Service
 public class HistoryMessageService implements IHistoryMessageService {
-
+    private static final String VIDEO_CHAT_END_MESSAGE = "视频通话时长: ";
     private final HistoryMessageDAO historyMessageDAO;
 
     @Autowired
@@ -29,6 +31,20 @@ public class HistoryMessageService implements IHistoryMessageService {
     @Override
     public void save(MessageSendReq messageSendReq) {
         historyMessageDAO.save(HistoryMessage.fromMessageSendReq(messageSendReq));
+    }
+
+    @Override
+    public void videoChatEnd(Long localId, Long remoteId,
+                             Timestamp startTime,
+                             Timestamp endTime) {
+        Long durationInSec = endTime.getTime() - startTime.getTime();
+        historyMessageDAO.save(HistoryMessage.builder()
+                .localId(localId)
+                .remoteId(remoteId)
+                .content(VIDEO_CHAT_END_MESSAGE + TimeFormatter.formatDuration(durationInSec))
+                .timeStamp(endTime)
+                .type("video")
+                .build());
     }
 
     @Override
