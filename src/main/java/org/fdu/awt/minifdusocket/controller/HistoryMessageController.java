@@ -27,29 +27,11 @@ public class HistoryMessageController {
         this.historyMessageService = historyMessageService;
     }
 
-//    @PostMapping("save-history-message")
-//    public Result saveHistoryMessage(@Validated @RequestBody MessageSendReq messageSendReq) {
-//        try{
-//            historyMessageService.save(messageSendReq);
-//            return ResultFactory.buildSuccessResult();
-//        }
-//        catch (DataIntegrityViolationException e){
-//            return ResultFactory.buildFailResult("传入的id有误");
-//        }
-//        catch (RuntimeException e) {
-//            return ResultFactory.buildInternalServerErrorResult();
-//        }
-//
-//    }
 
     @GetMapping("get-history-message")
     public Result getHistoryMessage(@RequestParam("localId") Long localId, @RequestParam("remoteId") Long remoteId) {
         List<MessageShowResp> historyMessageRespList = historyMessageService.getHistoryMessages(localId, remoteId);
-        if (historyMessageRespList.isEmpty()) {
-            return ResultFactory.buildFailResult("您当前无历史信息");
-        } else {
-            return ResultFactory.buildSuccessResult(historyMessageRespList);
-        }
+        return ResultFactory.buildSuccessResult(historyMessageRespList);
     }
 }
 
