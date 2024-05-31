@@ -11,8 +11,9 @@ import org.fdu.awt.minifdusocket.utils.SpringContext;
 import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * Video Chat WebSocket Service <br/>
@@ -27,10 +28,10 @@ public class VideoChatWebSocket {
     private Session session;
     private Long userId;
 
+    private boolean isTheInitiator = false;
     private boolean isBusy = false;
     private Timestamp startTime;
-    private static final CopyOnWriteArraySet<VideoChatWebSocket> webSockets = new CopyOnWriteArraySet<>();
-    private static final ConcurrentHashMap<Long, Session> sessionPool = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Long, VideoChatWebSocket> socketPool = new ConcurrentHashMap<>();
 
     /**
      * 无参构造函数，必须有
@@ -45,107 +46,159 @@ public class VideoChatWebSocket {
     public void onOpen(Session session, @PathParam("userId") Long userId) {
         this.session = session;
         this.userId = userId;
-        webSockets.add(this);
-        sessionPool.put(userId, session);
-        log.info("【VideoChatWebSocket】用户 {} 连接，总连接数: {}", userId, webSockets.size());
+        socketPool.put(userId, this);
+        log.info("【VideoChatWebSocket】用户 {} 连接，总连接数: {}", userId, socketPool.size());
     }
 
     @OnClose
     public void onClose() {
-        webSockets.remove(this);
-        sessionPool.remove(this.userId);
-        log.info("【VideoChatWebSocket】用户 {} 断开连接，总连接数: {}", userId, webSockets.size());
+        socketPool.remove(this.userId);
+        log.info("【VideoChatWebSocket】用户 {} 断开连接，总连接数: {}", userId, socketPool.size());
     }
 
     @OnMessage
     public void onMessage(String message) {
-        log.info("【VideoChatWebSocket】收到用户 {} 的message: {}", userId, message);
-        JSONObject jsonObject = JSONObject.parseObject(message);
-        String type = jsonObject.getString("type");
-        switch (type) {
-            case "video-invite":
-                handleVideoInvite(jsonObject);
-                break;
-            case "video-accept":
-                handleVideoAccept(jsonObject);
-                break;
-            case "video-reject": // TODO 暂时无, 未来可能会用到
-                handleVideoReject(jsonObject);
-                break;
-            case "video-processing":
-                handleVideoProcessing(jsonObject);
-                break;
-            case "video-end":
-                handleVideoEnd(jsonObject);
-                break;
-            default:
-                log.error("【websocket消息】未知消息类型:{}", type);
-                break;
+        try {
+            log.info("【VideoChatWebSocket】收到用户 {} 的message: {}", userId, message);
+            JSONObject data = JSONObject.parseObject(message);
+            String type = data.getString("type");
+            switch (type) {
+                case "video-invite":
+                    handleVideoInvite(data);
+                    break;
+                case "video-accept":
+                    handleVideoAccept(data);
+                    break;
+                case "video-reject":
+                    handleVideoReject(data);
+                    break;
+                case "video-processing":
+                    handleVideoProcessing(data);
+                    break;
+                case "video-end":
+                    handleVideoEnd(data);
+                    break;
+                default:
+                    log.error("【websocket消息】未知消息类型:{}", type);
+                    break;
+            }
+        } catch (Exception e) {
+            log.error("【VideoChatWebSocket】处理消息时出错: {}", message, e);
         }
     }
 
     private void handleVideoInvite(JSONObject data) {
         Long toId = data.getLong("toId");
-        if (isBusy) {
-            this.reject(userId, toId);
+        VideoChatWebSocket toSocket = socketPool.get(toId);
+        // 对方不在线
+        if (toSocket == null || toSocket.session == null || !toSocket.session.isOpen()) {
+            this.sendRejectMessage(userId, toId, "offline");
             return;
         }
+        // 对方正在通话中
+        if (toSocket.isBusy) {
+            this.sendRejectMessage(userId, toId, "busy");
+            return;
+        }
+        // 对方在线且空闲
+        this.sendInviteMessage(toId, userId);
+        // 标记自己为发起者
+        this.isTheInitiator = true;
         this.isBusy = true;
         this.startTime = new Timestamp(System.currentTimeMillis());
-        // 将消息转发给对方
-        JSONObject forwardData = new JSONObject();
-        forwardData.put("type", "video-invite");
-        forwardData.put("fromId", userId);
-        sendOneMessage(toId, forwardData.toJSONString());
     }
 
     private void handleVideoAccept(JSONObject data) {
         Long toId = data.getLong("toId");
+        // 告知对方接受了邀请
+        this.sendAcceptMessage(toId, userId);
+        // 标记自己为接受者
+        this.isTheInitiator = false;
         this.isBusy = true;
         this.startTime = new Timestamp(System.currentTimeMillis());
-        this.accept(userId, toId);
     }
 
     private void handleVideoReject(JSONObject data) {
         Long toId = data.getLong("toId");
+        this.sendRejectMessage(toId, userId, "reject");
+        // 存入数据库：拒绝由接受者存储
+        if (this.isTheInitiator) {
+            log.error("【VideoChatWebSocket】逻辑错误，发起者拒绝了自己的邀请");
+        } else {
+            historyMessageService.videoChatReject(toId, userId, startTime);
+        }
         this.isBusy = false;
         this.startTime = null;
-        this.reject(userId, toId);
-    }
-
-    private void accept(Long localId, Long toId) {
-        JSONObject forwardData = new JSONObject();
-        forwardData.put("type", "video-accept");
-        forwardData.put("fromId", localId);
-        sendOneMessage(toId, forwardData.toJSONString());
-    }
-
-    private void reject(Long localId, Long toId) {
-        // TODO 存入数据库：已拒绝
-        JSONObject forwardData = new JSONObject();
-        forwardData.put("type", "video-reject");
-        forwardData.put("fromId", localId);
-        sendOneMessage(toId, forwardData.toJSONString());
     }
 
     private void handleVideoProcessing(JSONObject data) {
+        // 只做转发
         Long toId = data.getLong("toId");
-        String forwardData = data.getString("forwardData");
-        // 将消息转发给对方
-        sendOneMessage(toId, forwardData);
+        if (Objects.equals(toId, this.userId)) {
+            log.error("【VideoChatWebSocket】逻辑错误，转发消息的目标是自己");
+            return;
+        }
+        this.sendProcessingMessage(toId, userId, data.getJSONObject("forwardData"));
     }
 
     private void handleVideoEnd(JSONObject data) {
         Long toId = data.getLong("toId");
+        this.sendEndMessage(toId, userId);
+        VideoChatWebSocket peerSocket = socketPool.get(toId);
+        if (peerSocket != null) {
+            peerSocket.isTheInitiator = false;
+            peerSocket.isBusy = false;
+            peerSocket.startTime = null;
+        }
+        // 视频结束由 发起结束者 存储
         historyMessageService.videoChatEnd(userId, toId, startTime, new Timestamp(System.currentTimeMillis()));
+        this.isTheInitiator = false;
         this.isBusy = false;
         this.startTime = null;
-        JSONObject forwardData = new JSONObject();
-        forwardData.put("type", "video-end");
-        forwardData.put("fromId", userId);
-        sendOneMessage(toId, forwardData.toJSONString());
     }
-    
+
+    private void sendRejectMessage(Long toId, Long fromId, String reason) {
+        JSONObject message = new JSONObject();
+        message.put("type", "video-reject");
+        message.put("fromId", fromId);
+        message.put("toId", toId);
+        message.put("reason", reason);
+        sendOneMessage(toId, message.toJSONString());
+    }
+
+    private void sendInviteMessage(Long toId, Long fromId) {
+        JSONObject message = new JSONObject();
+        message.put("type", "video-invite");
+        message.put("fromId", fromId);
+        message.put("toId", toId);
+        sendOneMessage(toId, message.toJSONString());
+    }
+
+    private void sendAcceptMessage(Long toId, Long fromId) {
+        JSONObject message = new JSONObject();
+        message.put("type", "video-accept");
+        message.put("fromId", fromId);
+        message.put("toId", toId);
+        sendOneMessage(toId, message.toJSONString());
+    }
+
+    private void sendEndMessage(Long toId, Long fromId) {
+        JSONObject message = new JSONObject();
+        message.put("type", "video-end");
+        message.put("fromId", fromId);
+        message.put("toId", toId);
+        sendOneMessage(toId, message.toJSONString());
+    }
+
+    private void sendProcessingMessage(Long toId, Long fromId, JSONObject forwardData) {
+        JSONObject message = new JSONObject();
+        message.put("type", "video-processing");
+        message.put("fromId", fromId);
+        message.put("toId", toId);
+        message.put("forwardData", forwardData);
+        sendOneMessage(toId, message.toJSONString());
+    }
+
     @OnError
     public void onError(Session session, Throwable error) {
         log.error("用户 {} 错误, 原因: {}", userId, error.getMessage());
@@ -158,24 +211,14 @@ public class VideoChatWebSocket {
      * @param message 消息内容
      */
     private void sendOneMessage(Long userId, String message) {
-        Session session = sessionPool.get(userId);
+        Session session = Optional.ofNullable(socketPool.get(userId))
+                .map(socket -> socket.session).orElse(null);
         if (session != null && session.isOpen()) {
             try {
+                log.info("【VideoChatWebSocket】发送消息给用户 {}: {}", userId, message);
                 session.getAsyncRemote().sendText(message);
             } catch (Exception e) {
                 log.error("【VideoChatWebSocket】发送消息时出错: {}", message, e);
-            }
-        }
-    }
-
-    private void broadcastMessageToOthers(String message) {
-        for (VideoChatWebSocket endpoint : webSockets) {
-            try {
-                if (endpoint.session.isOpen() && !endpoint.userId.equals(userId)) {
-                    endpoint.session.getAsyncRemote().sendText(message);
-                }
-            } catch (Exception e) {
-                log.error("【VideoChatWebSocket】广播消息时出错: {}", message, e);
             }
         }
     }
