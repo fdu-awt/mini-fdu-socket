@@ -48,6 +48,17 @@ public class HistoryMessageService implements IHistoryMessageService {
     }
 
     @Override
+    public void videoChatReject(Long initiatorId, Long recipientId, Timestamp startTime) {
+        historyMessageDAO.save(HistoryMessage.builder()
+                .localId(initiatorId)
+                .remoteId(recipientId)
+                .content("已拒绝")
+                .timeStamp(startTime)
+                .type("video")
+                .build());
+    }
+
+    @Override
     public List<MessageShowResp> getHistoryMessages(Long localId, Long remoteId) {
         List<HistoryMessage> selfHistoryMessages = historyMessageDAO.findByLocalIdAndRemoteId(localId, remoteId);
         List<HistoryMessage> remoteHistoryMessages = historyMessageDAO.findByLocalIdAndRemoteId(remoteId, localId);
