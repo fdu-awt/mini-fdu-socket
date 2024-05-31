@@ -52,7 +52,7 @@ public class HistoryMessageService implements IHistoryMessageService {
         historyMessageDAO.save(HistoryMessage.builder()
                 .localId(initiatorId)
                 .remoteId(recipientId)
-                .content("已拒绝")
+                .content("视频通话：已拒绝")
                 .timeStamp(startTime)
                 .type("video")
                 .build());
