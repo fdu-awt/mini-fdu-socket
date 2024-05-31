@@ -13,6 +13,10 @@ public interface IHistoryMessageService {
 
     void videoChatReject(Long initiatorId, Long recipientId, Timestamp startTime);
 
+    void videoChatOffLine(Long initiatorId, Long recipientId, Timestamp startTime);
+
+    void videoChatBusy(Long initiatorId, Long recipientId, Timestamp startTime);
+
     //获取历史聊天信息
     List<MessageShowResp> getHistoryMessages(Long localId, Long remoteId);
 }

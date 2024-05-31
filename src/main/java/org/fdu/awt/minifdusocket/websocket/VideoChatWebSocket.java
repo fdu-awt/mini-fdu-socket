@@ -93,11 +93,13 @@ public class VideoChatWebSocket {
         // 对方不在线
         if (toSocket == null || toSocket.session == null || !toSocket.session.isOpen()) {
             this.sendRejectMessage(userId, toId, "offline");
+            historyMessageService.videoChatOffLine(userId, toId, new Timestamp(System.currentTimeMillis()));
             return;
         }
         // 对方正在通话中
         if (toSocket.isBusy) {
             this.sendRejectMessage(userId, toId, "busy");
+            historyMessageService.videoChatBusy(userId, toId, new Timestamp(System.currentTimeMillis()));
             return;
         }
         // 对方在线且空闲

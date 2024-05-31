@@ -59,6 +59,22 @@ public class HistoryMessageService implements IHistoryMessageService {
     }
 
     @Override
+    public void videoChatOffLine(Long initiatorId, Long recipientId, Timestamp startTime) {
+        historyMessageDAO.save(HistoryMessage.builder()
+                .localId(initiatorId)
+                .remoteId(recipientId)
+                .content("视频通话：对方不在线")
+                .timeStamp(startTime)
+                .type("video")
+                .build());
+    }
+
+    @Override
+    public void videoChatBusy(Long initiatorId, Long recipientId, Timestamp startTime) {
+
+    }
+
+    @Override
     public List<MessageShowResp> getHistoryMessages(Long localId, Long remoteId) {
         List<HistoryMessage> selfHistoryMessages = historyMessageDAO.findByLocalIdAndRemoteId(localId, remoteId);
         List<HistoryMessage> remoteHistoryMessages = historyMessageDAO.findByLocalIdAndRemoteId(remoteId, localId);
