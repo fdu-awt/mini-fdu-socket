@@ -125,7 +125,7 @@ public class VideoChatWebSocket {
         if (this.isTheInitiator) {
             log.error("【VideoChatWebSocket】逻辑错误，发起者拒绝了自己的邀请");
         } else {
-            historyMessageService.videoChatReject(toId, userId, startTime);
+            historyMessageService.videoChatReject(toId, userId, new Timestamp(System.currentTimeMillis()));
         }
         this.isBusy = false;
         this.startTime = null;
