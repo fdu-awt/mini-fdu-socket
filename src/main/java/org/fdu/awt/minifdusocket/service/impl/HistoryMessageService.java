@@ -37,7 +37,7 @@ public class HistoryMessageService implements IHistoryMessageService {
     public void videoChatEnd(Long localId, Long remoteId,
                              Timestamp startTime,
                              Timestamp endTime) {
-        Long durationInSec = endTime.getTime() - startTime.getTime();
+        Long durationInSec = (endTime.getTime() - startTime.getTime()) / 1000;
         historyMessageDAO.save(HistoryMessage.builder()
                 .localId(localId)
                 .remoteId(remoteId)
