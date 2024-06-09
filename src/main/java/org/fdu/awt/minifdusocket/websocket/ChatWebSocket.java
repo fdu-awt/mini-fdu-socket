@@ -51,9 +51,9 @@ public class ChatWebSocket {
             this.userId = userId;
             webSockets.add(this);
             sessionPool.put(userId, session);
-            log.info("【websocket消息】用户 {} 连接，总数为:{}", userId, webSockets.size());
+            log.info("【ChatWebsocket消息】用户 {} 连接，总数为:{}", userId, webSockets.size());
         } catch (Exception e) {
-            log.error("【websocket消息】连接时出错", e);
+            log.error("【ChatWebsocket消息】连接时出错", e);
         }
     }
 
@@ -65,9 +65,9 @@ public class ChatWebSocket {
         try {
             webSockets.remove(this);
             sessionPool.remove(this.userId);
-            log.info("【websocket消息】用户 {} 连接断开，总数为:{}", this.userId, webSockets.size());
+            log.info("【ChatWebsocket消息】用户 {} 连接断开，总数为:{}", this.userId, webSockets.size());
         } catch (Exception e) {
-            log.error("【websocket消息】连接断开时出错", e);
+            log.error("【ChatWebsocket消息】连接断开时出错", e);
         }
     }
 
@@ -79,17 +79,17 @@ public class ChatWebSocket {
     @OnMessage
     public void onMessage(String message) {
         try {
-            log.info("【websocket消息】收到用户 {} 的message: {}", userId, message);
+            log.info("【ChatWebsocket消息】收到用户 {} 的message: {}", userId, message);
             //这里继续加type（从而来判断收到的前端具体的socket信息）
             JSONObject jsonObject = JSONObject.parseObject(message);
             String type = jsonObject.getString("type");
             if (type.equals("chat")) {
                 handleChatMessage(jsonObject);
             } else {
-                log.error("【websocket消息】未知消息类型:{}", type);
+                log.error("【ChatWebsocket消息】未知消息类型:{}", type);
             }
         } catch (Exception e) {
-            log.error("【websocket消息】消息格式错误:{}", message, e);
+            log.error("【ChatWebsocket消息】消息格式错误:{}", message, e);
         }
     }
 
@@ -97,7 +97,7 @@ public class ChatWebSocket {
         // 约定：客户端发送的是一个 JSON 字符串，包含 remoteId 和 message
         Long remoteId = jsonObject.getLong("remoteId");
         String textMessage = jsonObject.getString("message");
-        log.info("【websocket消息】收到客户端消息:{}", textMessage);
+        log.info("【ChatWebsocket消息】收到客户端消息:{}", textMessage);
         historyMessageService.save(MessageSendReq.builder()
                 .localId(userId)
                 .remoteId(remoteId)
@@ -123,14 +123,14 @@ public class ChatWebSocket {
      * 此为广播消息
      */
     public void sendAllMessage(String message) {
-        log.info("【websocket消息】广播消息:{}", message);
+        log.info("【ChatWebsocket消息】广播消息:{}", message);
         for (ChatWebSocket webSocket : webSockets) {
             try {
                 if (webSocket.session.isOpen()) {
                     webSocket.session.getAsyncRemote().sendText(message);
                 }
             } catch (Exception e) {
-                log.error("【websocket消息】广播消息出错", e);
+                log.error("【ChatWebsocket消息】广播消息出错", e);
             }
         }
     }
@@ -142,7 +142,7 @@ public class ChatWebSocket {
         Session session = sessionPool.get(id);
         if (session != null && session.isOpen()) {
             try {
-                log.info("【websocket消息】 单点消息:{}", message);
+                log.info("【ChatWebsocket消息】 单点消息:{}", message);
                 // 创建一个JSONObject来封装消息
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("message", message); // 消息内容
@@ -154,7 +154,7 @@ public class ChatWebSocket {
                 // 将JSONObject转换为JSON字符串并发送
                 session.getAsyncRemote().sendText(jsonObject.toJSONString());
             } catch (Exception e) {
-                log.error("【websocket消息】 单点消息出错", e);
+                log.error("【ChatWebsocket消息】 单点消息出错", e);
             }
         }
     }
@@ -167,10 +167,10 @@ public class ChatWebSocket {
             Session session = sessionPool.get(Long.valueOf(userId));
             if (session != null && session.isOpen()) {
                 try {
-                    log.info("【websocket消息】 多人单点消息:{}", message);
+                    log.info("【ChatWebsocket消息】 多人单点消息:{}", message);
                     session.getAsyncRemote().sendText(message);
                 } catch (Exception e) {
-                    log.error("【websocket消息】 多人单点消息出错", e);
+                    log.error("【ChatWebsocket消息】 多人单点消息出错", e);
                 }
             }
         }
