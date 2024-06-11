@@ -136,6 +136,7 @@ public class VideoChatWebSocket {
     private void handleVideoProcessing(JSONObject data) {
         // 只做转发
         Long toId = data.getLong("toId");
+
         if (Objects.equals(toId, this.userId)) {
             log.error("【VideoChatWebSocket】逻辑错误，转发消息的目标是自己");
             return;
