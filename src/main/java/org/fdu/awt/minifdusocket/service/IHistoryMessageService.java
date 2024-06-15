@@ -19,4 +19,6 @@ public interface IHistoryMessageService {
 
     //获取历史聊天信息
     List<MessageShowResp> getHistoryMessages(Long localId, Long remoteId);
+
+    void videoChatCancel(Long initiatorId, Long recipientId, Timestamp cancelTime);
 }

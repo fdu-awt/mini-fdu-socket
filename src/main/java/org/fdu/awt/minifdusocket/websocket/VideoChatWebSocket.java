@@ -146,19 +146,29 @@ public class VideoChatWebSocket {
 
     private void handleVideoEnd(JSONObject data) {
         Long toId = data.getLong("toId");
-        this.sendEndMessage(toId, userId);
-        VideoChatWebSocket peerSocket = socketPool.get(toId);
-        if (peerSocket != null) {
-            peerSocket.isTheInitiator = false;
-            peerSocket.isBusy = false;
-            peerSocket.startTime = null;
+        boolean isAccepted = data.getBoolean("isAccepted");
+
+        if (isAccepted) {
+            this.sendEndMessage(toId, userId);
+            VideoChatWebSocket peerSocket = socketPool.get(toId);
+            if (peerSocket != null) {
+                peerSocket.isTheInitiator = false;
+                peerSocket.isBusy = false;
+                peerSocket.startTime = null;
+            }
+            // 视频结束由 发起结束者 存储
+            historyMessageService.videoChatEnd(userId, toId, startTime, new Timestamp(System.currentTimeMillis()));
+        } else {
+            // 视频通话已取消
+            this.sendEndMessage(toId, userId);
+            historyMessageService.videoChatCancel(userId, toId, new Timestamp(System.currentTimeMillis()));
         }
-        // 视频结束由 发起结束者 存储
-        historyMessageService.videoChatEnd(userId, toId, startTime, new Timestamp(System.currentTimeMillis()));
+
         this.isTheInitiator = false;
         this.isBusy = false;
         this.startTime = null;
     }
+
 
     private void sendRejectMessage(Long toId, Long fromId, String reason) {
         JSONObject message = new JSONObject();

@@ -95,5 +95,16 @@ public class HistoryMessageService implements IHistoryMessageService {
                 })
                 .collect(Collectors.toList());
     }
+    @Override
+    public void videoChatCancel(Long initiatorId, Long recipientId, Timestamp cancelTime) {
+        historyMessageDAO.save(HistoryMessage.builder()
+                .localId(initiatorId)
+                .remoteId(recipientId)
+                .content("视频通话：已取消")
+                .timeStamp(cancelTime)
+                .type("video")
+                .build());
+    }
+
 
 }
